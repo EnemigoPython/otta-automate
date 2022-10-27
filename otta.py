@@ -11,7 +11,7 @@ class DriverManager:
     def __init__(self):
         options = FirefoxOptions()
         if profile := os.getenv("PROFILE_PATH"):
-            options.add_argument(rf'--profile-directory={profile}')
+            options.add_argument(rf'--profile={profile}')
         self.driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()), options=options)
     
     def __enter__(self):
@@ -21,7 +21,7 @@ class DriverManager:
         self.driver.quit()
 
 load_dotenv()
-print(os.getenv("GH_TOKEN"))
 
 with DriverManager() as driver:
     driver.get("https://app.otta.com/")
+    time.sleep(30)

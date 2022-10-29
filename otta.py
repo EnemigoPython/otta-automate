@@ -11,7 +11,6 @@ import pathlib
 import logging
 import sys
 import os
-import time
 
 FILENAME = os.path.basename(__file__)
 
@@ -67,9 +66,46 @@ class DriverManager:
         self.driver.quit()
 
 class JobApplication:
-    """In this class we will gather the data and formulate our application"""
-    def __init__(self):
-        pass
+    """In this class we will gather the data and formulate our job application"""
+    def __init__(self, driver: webdriver.Firefox):
+        self.job_title = self.page_data_text(driver, "job-title")
+        self.company_title = self.page_data_text(driver, "ottas-take").split("Otta's take on ")[1]
+        self.technologies = self.page_data_text(driver, "job-technology-used").split("\n")
+        self.office_requirements = self.page_data_text(driver, "office-day-requirements")
+        self.salary = self.page_data_text(driver, "salary-section").split("k")[0] + 'k'
+        self.industries = self.page_data_text_list(driver, "company-sector-tag")
+        self.benefits = self.page_data_text_list(driver, "company-benefit-bullet")
+        self.values = self.page_data_text_list(driver, "company-value-bullet")
+        self.job_involves = self.page_data_text_list(driver, "job-involves-bullet")
+        self.job_requirements = self.page_data_text_list(driver, "job-requirements-bullet")
+        self.web_link = self.get_web_link(driver)
+        breakpoint()
+
+    def page_element(self, driver: webdriver.Firefox, el: str):
+        try:
+            return driver.find_element(By.XPATH, f"//*[@data-testid='{el}']")
+        except:
+            return None
+
+    def page_data_text(self, driver: webdriver.Firefox, el: str):
+        try:
+            return driver.find_element(By.XPATH, f"//*[@data-testid='{el}']").text
+        except:
+            return None
+
+    def page_data_text_list(self, driver: webdriver.Firefox, el: str):
+        try:
+            return [i.text for i in driver.find_elements(By.XPATH, f"//*[@data-testid='{el}']")]
+        except:
+            return []
+
+    def get_web_link(self, driver: webdriver.Firefox):
+        try:
+            job_card = driver.find_element(By.XPATH, "//*[@data-testid='job-card']")
+            link = job_card.find_element(By.TAG_NAME, "a")
+            return link.get_attribute("href")
+        except:
+            return None
 
 def main():
     logger = get_logger()
@@ -80,9 +116,7 @@ def main():
 
     with DriverManager(logger) as driver:
         driver.get("https://app.otta.com/jobs/theme/apply-via-otta")
-        end_of_card = driver.find_element(By.XPATH, "//*[data-testid='share-job-link']")
-        print(end_of_card.text)
-        print("YaTa")
+        application = JobApplication(driver)
 
 
 if __name__ == '__main__':

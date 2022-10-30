@@ -6,6 +6,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.common.by import By
 from webdriver_manager.firefox import GeckoDriverManager
+from functools import partial
 from dotenv import load_dotenv
 from enum import Enum, auto
 import traceback
@@ -26,14 +27,6 @@ def get_logger():
     handler.setFormatter(formatter)
     logger.addHandler(handler)
     return logger
-
-def find_element_by_data_id(driver: webdriver.Firefox, id: str):
-    """Find a SINGLE element using an xpath pattern on the `data-testid` tag"""
-    return driver.find_element(By.XPATH, f"//*[@data-testid='{id}']")
-
-def find_elements_by_data_id(driver: webdriver.Firefox, id: str):
-    """Find MULTIPLE elements using an xpath pattern on the `data-testid` tag"""
-    return driver.find_elements(By.XPATH, f"//*[@data-testid='{id}']")
 
 class InputType(Enum):
     TEXTAREA = auto()
@@ -84,6 +77,8 @@ class DriverManager:
             raise e
     
     def __enter__(self):
+        self.driver.find_element_by_data_id = partial(self.find_element_by_data_id, driver=self.driver)
+        self.driver.find_elements_by_data_id = partial(self.find_elements_by_data_id, driver=self.driver)
         return self.driver
 
     def __exit__(self, *exc):
@@ -94,6 +89,16 @@ class DriverManager:
         else:
             self.logger.info("Script ran to completion: exiting")
         self.driver.quit()
+
+    @staticmethod
+    def find_element_by_data_id(id: str, driver: webdriver.Firefox):
+        """Find a SINGLE element using an xpath pattern on the `data-testid` tag"""
+        return driver.find_element(By.XPATH, f"//*[@data-testid='{id}']")
+
+    @staticmethod
+    def find_elements_by_data_id(id: str, driver: webdriver.Firefox):
+        """Find MULTIPLE elements using an xpath pattern on the `data-testid` tag"""
+        return driver.find_elements(By.XPATH, f"//*[@data-testid='{id}']")
 
 class JobApplication:
     """Used to gather the data and formulate our job application"""
@@ -108,6 +113,7 @@ class JobApplication:
         self.salary = self.page_data_text(driver, "salary-section").split("k")[0] or None
         if self.salary is not None:
             self.salary += 'k'
+        self.location_description = self.page_data_text_list(driver, "job-location-tag")
         self.industries = self.page_data_text_list(driver, "company-sector-tag")
         self.benefits = self.page_data_text_list(driver, "company-benefit-bullet")
         self.values = self.page_data_text_list(driver, "company-value-bullet")
@@ -117,19 +123,20 @@ class JobApplication:
 
     def page_data_text(self, driver: webdriver.Firefox, el: str):
         try:
-            return find_element_by_data_id(driver, el).text
+            return driver.find_element_by_data_id(el).text
         except:
+            print(traceback.format_exc())
             return ""
 
     def page_data_text_list(self, driver: webdriver.Firefox, el: str):
         try:
-            return [i.text for i in find_elements_by_data_id(driver, el)]
+            return [i.text for i in driver.find_elements_by_data_id(el)]
         except:
             return []
 
     def get_web_link(self, driver: webdriver.Firefox):
         try:
-            job_card = find_element_by_data_id(driver, "job-card")
+            job_card = driver.find_element_by_data_id("job-card")
             link = job_card.find_element(By.TAG_NAME, "a")
             return link.get_attribute("href")
         except:
@@ -154,11 +161,11 @@ def main():
             if DEBUG:
                 logger.info(f"Entering debugger at '{application.company_title}' listing page")
                 breakpoint()
-            buttons_panel = find_element_by_data_id(driver, "desktop-action-panel")
+            buttons_panel = driver.find_element_by_data_id("desktop-action-panel")
             buttons_panel.find_elements(By.TAG_NAME, "button")[1].click()
-            apply_modal = find_element_by_data_id(driver, "apply-content")
+            apply_modal = driver.find_element_by_data_id("apply-content")
             apply_modal.find_element(By.TAG_NAME, "button").click()
-            question_elements = find_elements_by_data_id(driver, "application-question-card")
+            question_elements = driver.find_elements_by_data_id("application-question-card")
             questions = [i.text for i in question_elements]
             application.answer(questions)
             if DEBUG:
@@ -171,6 +178,9 @@ def main():
             logger.info(f"{applications_in_session} job applications made in this session")
         else:
             logger.warning("No job applications made - might be an error or new posts might have been depleted")
+            if DEBUG:
+                logger.warning("Entering debugger to investigate incident")
+                breakpoint()
 
 
 if __name__ == '__main__':

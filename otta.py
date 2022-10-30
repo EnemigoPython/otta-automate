@@ -1,4 +1,3 @@
-from asyncio.log import logger
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.firefox.service import Service as FirefoxService
@@ -25,6 +24,14 @@ def get_logger():
     handler.setFormatter(formatter)
     logger.addHandler(handler)
     return logger
+
+def find_element_by_data_id(driver: webdriver.Firefox, id: str):
+    """Find a SINGLE element using an xpath pattern on the `data-testid` tag"""
+    return driver.find_element(By.XPATH, f"//*[@data-testid='{id}']")
+
+def find_elements_by_data_id(driver: webdriver.Firefox, id: str):
+    """Find MULTIPLE elements using an xpath pattern on the `data-testid` tag"""
+    return driver.find_elements(By.XPATH, f"//*[@data-testid='{id}']")
 
 class NoCredentialsException(Exception):
     """A custom error to reject execution if the proper env variables aren't set"""
@@ -70,10 +77,12 @@ class DriverManager:
 
 class JobApplication:
     """In this class we will gather the data and formulate our job application"""
-    def __init__(self, logger: logging.Logger, driver: webdriver.Firefox):
-        self.logger = logger
+    def __init__(self, driver: webdriver.Firefox):
         self.job_title = self.page_data_text(driver, "job-title") or None
-        self.company_title = self.page_data_text(driver, "ottas-take").split("Otta's take on ")[1] or None
+        try:
+            self.company_title = self.page_data_text(driver, "ottas-take").split("Otta's take on ")[-1]
+        except IndexError:
+            self.company_title = None
         self.technologies = self.page_data_text(driver, "job-technology-used").split("\n") or None
         self.office_requirements = self.page_data_text(driver, "office-day-requirements") or None
         self.salary = self.page_data_text(driver, "salary-section").split("k")[0] or None
@@ -85,25 +94,22 @@ class JobApplication:
         self.job_involves = self.page_data_text_list(driver, "job-involves-bullet")
         self.job_requirements = self.page_data_text_list(driver, "job-requirements-bullet")
         self.web_link = self.get_web_link(driver)
-        if DEBUG:
-            self.logger.info(f"Entering debugger at '{self.company_title}' listing page")
-            breakpoint()
 
     def page_data_text(self, driver: webdriver.Firefox, el: str):
         try:
-            return driver.find_element(By.XPATH, f"//*[@data-testid='{el}']").text
+            return find_element_by_data_id(driver, el).text
         except:
             return ""
 
     def page_data_text_list(self, driver: webdriver.Firefox, el: str):
         try:
-            return [i.text for i in driver.find_elements(By.XPATH, f"//*[@data-testid='{el}']")]
+            return [i.text for i in find_elements_by_data_id(driver, el)]
         except:
             return []
 
     def get_web_link(self, driver: webdriver.Firefox):
         try:
-            job_card = driver.find_element(By.XPATH, "//*[@data-testid='job-card']")
+            job_card = find_element_by_data_id(driver, "job-card")
             link = job_card.find_element(By.TAG_NAME, "a")
             return link.get_attribute("href")
         except:
@@ -111,6 +117,9 @@ class JobApplication:
 
     def minimum_application_requirement(self):
         return self.job_title is not None and self.company_title is not None
+
+    def write_application(self):
+        pass
 
 def main():
     logger = get_logger()
@@ -121,13 +130,26 @@ def main():
     with DriverManager(logger) as driver:
         driver.get("https://app.otta.com/jobs/theme/apply-via-otta")
         applications_in_session = 0
-        while (application := JobApplication(logger, driver)).minimum_application_requirement():
-            pass
+        while (application := JobApplication(driver)).minimum_application_requirement():
+            if DEBUG:
+                logger.info(f"Entering debugger at '{application.company_title}' listing page")
+                breakpoint()
+            buttons_panel = find_element_by_data_id(driver, "desktop-action-panel")
+            buttons_panel.find_elements(By.TAG_NAME, "button")[1].click()
+            apply_modal = find_element_by_data_id(driver, "apply-content")
+            apply_modal.find_element(By.TAG_NAME, "button").click()
+            question_elements = find_elements_by_data_id(driver, "application-question-card")
+            questions = [i.text for i in question_elements]
+            if DEBUG:
+                logger.info(f"Entering debugger at '{application.company_title}' application page")
+                breakpoint()
+            for question_element in question_elements:
+                pass
             applications_in_session += 1
         if applications_in_session > 0:
             logger.info(f"{applications_in_session} job applications made in this session")
         else:
-            logger.warn("No job applications made - might be an error or that new posts have been depleted")
+            logger.warning("No job applications made - might be an error or new posts might have been depleted")
 
 
 if __name__ == '__main__':

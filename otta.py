@@ -1,3 +1,4 @@
+from asyncio.log import logger
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.firefox.service import Service as FirefoxService
@@ -13,6 +14,8 @@ import sys
 import os
 
 FILENAME = os.path.basename(__file__)
+AUTO = "--auto" in sys.argv
+DEBUG = "--debug" in sys.argv
 
 def get_logger():
     logger = logging.getLogger(FILENAME)
@@ -67,31 +70,30 @@ class DriverManager:
 
 class JobApplication:
     """In this class we will gather the data and formulate our job application"""
-    def __init__(self, driver: webdriver.Firefox):
-        self.job_title = self.page_data_text(driver, "job-title")
-        self.company_title = self.page_data_text(driver, "ottas-take").split("Otta's take on ")[1]
-        self.technologies = self.page_data_text(driver, "job-technology-used").split("\n")
-        self.office_requirements = self.page_data_text(driver, "office-day-requirements")
-        self.salary = self.page_data_text(driver, "salary-section").split("k")[0] + 'k'
+    def __init__(self, logger: logging.Logger, driver: webdriver.Firefox):
+        self.logger = logger
+        self.job_title = self.page_data_text(driver, "job-title") or None
+        self.company_title = self.page_data_text(driver, "ottas-take").split("Otta's take on ")[1] or None
+        self.technologies = self.page_data_text(driver, "job-technology-used").split("\n") or None
+        self.office_requirements = self.page_data_text(driver, "office-day-requirements") or None
+        self.salary = self.page_data_text(driver, "salary-section").split("k")[0] or None
+        if self.salary is not None:
+            self.salary += 'k'
         self.industries = self.page_data_text_list(driver, "company-sector-tag")
         self.benefits = self.page_data_text_list(driver, "company-benefit-bullet")
         self.values = self.page_data_text_list(driver, "company-value-bullet")
         self.job_involves = self.page_data_text_list(driver, "job-involves-bullet")
         self.job_requirements = self.page_data_text_list(driver, "job-requirements-bullet")
         self.web_link = self.get_web_link(driver)
-        breakpoint()
-
-    def page_element(self, driver: webdriver.Firefox, el: str):
-        try:
-            return driver.find_element(By.XPATH, f"//*[@data-testid='{el}']")
-        except:
-            return None
+        if DEBUG:
+            self.logger.info(f"Entering debugger at '{self.company_title}' listing page")
+            breakpoint()
 
     def page_data_text(self, driver: webdriver.Firefox, el: str):
         try:
             return driver.find_element(By.XPATH, f"//*[@data-testid='{el}']").text
         except:
-            return None
+            return ""
 
     def page_data_text_list(self, driver: webdriver.Firefox, el: str):
         try:
@@ -107,16 +109,25 @@ class JobApplication:
         except:
             return None
 
+    def minimum_application_requirement(self):
+        return self.job_title is not None and self.company_title is not None
+
 def main():
     logger = get_logger()
     logger.info(f"Started execution of {FILENAME}")
-    if "--auto" in sys.argv:
-        logger.info("This execution was run automatically")
+    logger.info(f"Execution mode: '{'automatic' if AUTO else 'manual'}', debug mode: '{'on' if DEBUG else 'off'}'")
     load_dotenv()
 
     with DriverManager(logger) as driver:
         driver.get("https://app.otta.com/jobs/theme/apply-via-otta")
-        application = JobApplication(driver)
+        applications_in_session = 0
+        while (application := JobApplication(logger, driver)).minimum_application_requirement():
+            pass
+            applications_in_session += 1
+        if applications_in_session > 0:
+            logger.info(f"{applications_in_session} job applications made in this session")
+        else:
+            logger.warn("No job applications made - might be an error or that new posts have been depleted")
 
 
 if __name__ == '__main__':

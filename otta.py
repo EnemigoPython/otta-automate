@@ -3,9 +3,11 @@ from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.firefox.service import Service as FirefoxService
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.common.by import By
 from webdriver_manager.firefox import GeckoDriverManager
 from dotenv import load_dotenv
+from enum import Enum, auto
 import traceback
 import pathlib
 import logging
@@ -32,6 +34,24 @@ def find_element_by_data_id(driver: webdriver.Firefox, id: str):
 def find_elements_by_data_id(driver: webdriver.Firefox, id: str):
     """Find MULTIPLE elements using an xpath pattern on the `data-testid` tag"""
     return driver.find_elements(By.XPATH, f"//*[@data-testid='{id}']")
+
+class InputType(Enum):
+    TEXTAREA = auto()
+    CHECKBOX = auto()
+    DROPDOWN = auto()
+
+class QuestionGist(Enum):
+    COVER_LETTER = auto()
+    AFFIRM_RIGHT_TO_WORK = auto()
+    NEED_SPONSORSHIP = auto()
+    UNKNOWN = auto()
+
+def extract_question_info(el: WebElement):
+    """
+    We want to find out the meaning of the question and the type of input so we can boil it down
+    to 
+    """
+    pass
 
 class NoCredentialsException(Exception):
     """A custom error to reject execution if the proper env variables aren't set"""
@@ -76,7 +96,7 @@ class DriverManager:
         self.driver.quit()
 
 class JobApplication:
-    """In this class we will gather the data and formulate our job application"""
+    """Used to gather the data and formulate our job application"""
     def __init__(self, driver: webdriver.Firefox):
         self.job_title = self.page_data_text(driver, "job-title") or None
         try:
@@ -118,7 +138,7 @@ class JobApplication:
     def minimum_application_requirement(self):
         return self.job_title is not None and self.company_title is not None
 
-    def write_application(self):
+    def answer(self, questions: list[str]):
         pass
 
 def main():
@@ -140,6 +160,7 @@ def main():
             apply_modal.find_element(By.TAG_NAME, "button").click()
             question_elements = find_elements_by_data_id(driver, "application-question-card")
             questions = [i.text for i in question_elements]
+            application.answer(questions)
             if DEBUG:
                 logger.info(f"Entering debugger at '{application.company_title}' application page")
                 breakpoint()

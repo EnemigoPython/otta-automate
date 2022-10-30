@@ -77,8 +77,9 @@ class DriverManager:
             raise e
     
     def __enter__(self):
-        self.driver.find_element_by_data_id = partial(self.find_element_by_data_id, driver=self.driver)
-        self.driver.find_elements_by_data_id = partial(self.find_elements_by_data_id, driver=self.driver)
+        # these methods are moved to the driver object to call as if native to WebDriver
+        setattr(self.driver, "find_element_by_data_id", partial(self._find_element_by_data_id, driver=self.driver))
+        setattr(self.driver, "find_elements_by_data_id", partial(self._find_elements_by_data_id, driver=self.driver))
         return self.driver
 
     def __exit__(self, *exc):
@@ -91,12 +92,12 @@ class DriverManager:
         self.driver.quit()
 
     @staticmethod
-    def find_element_by_data_id(id: str, driver: webdriver.Firefox):
+    def _find_element_by_data_id(id: str, driver: webdriver.Firefox):
         """Find a SINGLE element using an xpath pattern on the `data-testid` tag"""
         return driver.find_element(By.XPATH, f"//*[@data-testid='{id}']")
 
     @staticmethod
-    def find_elements_by_data_id(id: str, driver: webdriver.Firefox):
+    def _find_elements_by_data_id(id: str, driver: webdriver.Firefox):
         """Find MULTIPLE elements using an xpath pattern on the `data-testid` tag"""
         return driver.find_elements(By.XPATH, f"//*[@data-testid='{id}']")
 
@@ -125,7 +126,6 @@ class JobApplication:
         try:
             return driver.find_element_by_data_id(el).text
         except:
-            print(traceback.format_exc())
             return ""
 
     def page_data_text_list(self, driver: webdriver.Firefox, el: str):

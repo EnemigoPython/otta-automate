@@ -51,7 +51,7 @@ class NoCredentialsException(Exception):
     def __init__(self):
         super().__init__("You need 'PROFILE_FILE' and 'USER' environment variables set to run this script")
 
-class DriverManager:
+class DriverManager(webdriver.Firefox):
     """A wrapper to run the Selenium driver as a context manager and inject our logger"""
     def __init__(self, logger: logging.Logger):
         self.logger = logger
@@ -65,11 +65,8 @@ class DriverManager:
                 options.add_argument(str(path))
             else:
                 raise NoCredentialsException()
-            self.driver = webdriver.Firefox(
-                service=FirefoxService(GeckoDriverManager().install()), 
-                options=options
-            )
-            self.driver.implicitly_wait(30)
+            super().__init__(service=FirefoxService(GeckoDriverManager().install()), options=options)
+            self.implicitly_wait(30)
             self.logger.info("Driver initialised")
         except Exception as e:
             self.logger.error(f"Crashed on startup with a {repr(e.__class__.__name__)}: view traceback below")
@@ -77,10 +74,7 @@ class DriverManager:
             raise e
     
     def __enter__(self):
-        # these methods are moved to the driver object to call as if native to WebDriver
-        setattr(self.driver, "find_element_by_data_id", partial(self._find_element_by_data_id, driver=self.driver))
-        setattr(self.driver, "find_elements_by_data_id", partial(self._find_elements_by_data_id, driver=self.driver))
-        return self.driver
+        return self
 
     def __exit__(self, *exc):
         if any(exc):
@@ -89,58 +83,67 @@ class DriverManager:
             self.logger.error(traceback.format_exc())
         else:
             self.logger.info("Script ran to completion: exiting")
-        self.driver.quit()
+        self.quit()
 
-    @staticmethod
-    def _find_element_by_data_id(id: str, driver: webdriver.Firefox):
+    def find_element_by_data_id(self, id: str):
         """Find a SINGLE element using an xpath pattern on the `data-testid` tag"""
-        return driver.find_element(By.XPATH, f"//*[@data-testid='{id}']")
+        return self.find_element(By.XPATH, f"//*[@data-testid='{id}']")
 
-    @staticmethod
-    def _find_elements_by_data_id(id: str, driver: webdriver.Firefox):
+    def find_elements_by_data_id(self, id: str):
         """Find MULTIPLE elements using an xpath pattern on the `data-testid` tag"""
-        return driver.find_elements(By.XPATH, f"//*[@data-testid='{id}']")
+        return self.find_elements(By.XPATH, f"//*[@data-testid='{id}']")
 
-class JobApplication:
-    """Used to gather the data and formulate our job application"""
-    def __init__(self, driver: webdriver.Firefox):
-        self.job_title = self.page_data_text(driver, "job-title") or None
+    def page_data_text(self, el: str):
+        """
+        Extract the text from a `data-testid`, or an empty string if it isn't possible
+        """
         try:
-            self.company_title = self.page_data_text(driver, "ottas-take").split("Otta's take on ")[-1]
-        except IndexError:
-            self.company_title = None
-        self.technologies = self.page_data_text(driver, "job-technology-used").split("\n") or None
-        self.office_requirements = self.page_data_text(driver, "office-day-requirements") or None
-        self.salary = self.page_data_text(driver, "salary-section").split("k")[0] or None
-        if self.salary is not None:
-            self.salary += 'k'
-        self.location_description = self.page_data_text_list(driver, "job-location-tag")
-        self.industries = self.page_data_text_list(driver, "company-sector-tag")
-        self.benefits = self.page_data_text_list(driver, "company-benefit-bullet")
-        self.values = self.page_data_text_list(driver, "company-value-bullet")
-        self.job_involves = self.page_data_text_list(driver, "job-involves-bullet")
-        self.job_requirements = self.page_data_text_list(driver, "job-requirements-bullet")
-        self.web_link = self.get_web_link(driver)
-
-    def page_data_text(self, driver: webdriver.Firefox, el: str):
-        try:
-            return driver.find_element_by_data_id(el).text
+            return self.find_element_by_data_id(el).text
         except:
             return ""
 
-    def page_data_text_list(self, driver: webdriver.Firefox, el: str):
+    def page_data_text_list(self, el: str):
+        """
+        Extract a list of text from tags with `data-testid` or an empty list if it isn't possible
+        """
         try:
-            return [i.text for i in driver.find_elements_by_data_id(el)]
+            return [i.text for i in self.find_elements_by_data_id(el)]
         except:
             return []
 
-    def get_web_link(self, driver: webdriver.Firefox):
+    def get_web_link(self):
+        """
+        Attempt to get the web link of a company or return None
+        """
         try:
-            job_card = driver.find_element_by_data_id("job-card")
+            job_card = self.find_element_by_data_id("job-card")
             link = job_card.find_element(By.TAG_NAME, "a")
             return link.get_attribute("href")
         except:
             return None
+
+class JobApplication:
+    """Used to gather the data and formulate our job application"""
+    def __init__(self, driver: DriverManager):
+        self.job_title = driver.page_data_text("job-title") or None
+        try:
+            self.company_title = driver.page_data_text("ottas-take").split("Otta's take on ")[-1]
+        except IndexError:
+            self.company_title = None
+        self.technologies = driver.page_data_text("job-technology-used").split("\n") or None
+        self.office_requirements = driver.page_data_text("office-day-requirements") or None
+        self.salary = driver.page_data_text("salary-section").split("k")[0] or None
+        if self.salary is not None:
+            self.salary += 'k'
+        self.location_description = driver.page_data_text_list("job-location-tag")
+        self.industries = driver.page_data_text_list("company-sector-tag")
+        self.benefits = driver.page_data_text_list("company-benefit-bullet")
+        self.values = driver.page_data_text_list("company-value-bullet")
+        self.job_involves = driver.page_data_text_list("job-involves-bullet")
+        self.job_requirements = driver.page_data_text_list("job-requirements-bullet")
+        self.web_link = driver.get_web_link()
+        if self.company_title:
+            driver.logger.info(f"Data gathered for {self.company_title}")
 
     def minimum_application_requirement(self):
         return self.job_title is not None and self.company_title is not None

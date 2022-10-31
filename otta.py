@@ -3,10 +3,10 @@ from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.firefox.service import Service as FirefoxService
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.common.by import By
 from webdriver_manager.firefox import GeckoDriverManager
-from functools import partial
 from dotenv import load_dotenv
 from enum import Enum, auto
 import traceback
@@ -32,19 +32,24 @@ class InputType(Enum):
     TEXTAREA = auto()
     CHECKBOX = auto()
     DROPDOWN = auto()
+    UNKNOWN = auto()
 
-class QuestionGist(Enum):
+class Sentiment(Enum):
     COVER_LETTER = auto()
     AFFIRM_RIGHT_TO_WORK = auto()
     NEED_SPONSORSHIP = auto()
+    HOW_DID_YOU_HEAR = auto()
+    PRONOUNS = auto()
     UNKNOWN = auto()
 
-def extract_question_info(el: WebElement):
+class Question:
     """
-    We want to find out the meaning of the question and the type of input so we can boil it down
-    to 
+    A Question object represents what needs to be entered (Sentiment) and how to enter it (InputType)
     """
-    pass
+
+    def __init__(self, input_type: InputType, sentiment: Sentiment):
+        self.input_type = input_type
+        self.sentiment = sentiment
 
 class NoCredentialsException(Exception):
     """A custom error to reject execution if the proper env variables aren't set"""
@@ -121,6 +126,50 @@ class DriverManager(webdriver.Firefox):
             return link.get_attribute("href")
         except:
             return None
+
+    def extract_input_type(self, text: str):
+        try:
+            input_instructions = text.split("\n")[-1].lower()
+            if "choose an option" in input_instructions:
+                return InputType.DROPDOWN
+            if "check all" in input_instructions:
+                return InputType.CHECKBOX
+            if "type your answer" in input_instructions:
+                return InputType.TEXTAREA
+            self.logger.warning(f"Couldn't identify the input type for a question: {text}")
+            return InputType.UNKNOWN
+        except IndexError:
+            self.logger.warning(f"Couldn't identify the input type for a question: {text}")
+            return InputType.UNKNOWN
+
+    def extract_sentiment(self, text: str):
+        sentiment = Sentiment.UNKNOWN
+        semantic_clues = {
+            Sentiment.COVER_LETTER: ["why do you want to work"],
+            Sentiment.AFFIRM_RIGHT_TO_WORK: ["right to work in UK", "do have", "do you have", "citizenship", "confirm the right"],
+            Sentiment.NEED_SPONSORSHIP: [""],
+            Sentiment.PRONOUNS: ["preferred name", "pronouns"],
+            Sentiment.HOW_DID_YOU_HEAR: ["how did you hear"]
+        }
+        threshold = 0
+        for key, value in semantic_clues.values():
+            hits = sum(s for s in value if s in text)
+            if hits > threshold:
+                threshold = hits
+                sentiment = key
+        if threshold == 0:
+            self.logger.warning(f"Couldn't identify the sentiment for a question: {text}")
+        return sentiment
+
+    def extract_question_info(self, element: WebElement):
+        """
+        We want to find out the meaning of the question and the type of input so we can boil it down
+        to a Question object
+        """
+        return Question(
+            self.extract_input_type(element.text), 
+            self.extract_sentiment(element.text)
+        )
 
 class JobApplication:
     """Used to gather the data and formulate our job application"""

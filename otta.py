@@ -90,6 +90,12 @@ class DriverManager(webdriver.Firefox):
             self.logger.info("Script ran to completion: exiting")
         self.quit()
 
+    def debug(self, message: str, level: logging.INFO):
+        """Breakpoint for debug mode"""
+        if DEBUG:
+            self.logger.log(level, message)
+            breakpoint()
+
     def find_element_by_data_id(self, id: str):
         """Find a SINGLE element using an xpath pattern on the `data-testid` tag"""
         return self.find_element(By.XPATH, f"//*[@data-testid='{id}']")
@@ -146,8 +152,8 @@ class DriverManager(webdriver.Firefox):
         sentiment = Sentiment.UNKNOWN
         semantic_clues = {
             Sentiment.COVER_LETTER: ["why do you want to work"],
-            Sentiment.AFFIRM_RIGHT_TO_WORK: ["right to work in UK", "do have", "do you have", "citizenship", "confirm the right"],
-            Sentiment.NEED_SPONSORSHIP: [""],
+            Sentiment.AFFIRM_RIGHT_TO_WORK: ["right to work in UK", "do have", "do you have", "citizenship", "confirm the right", "confirm you are"],
+            Sentiment.NEED_SPONSORSHIP: ["will you need", "sponsor", "sponsorship", "immigration"],
             Sentiment.PRONOUNS: ["preferred name", "pronouns"],
             Sentiment.HOW_DID_YOU_HEAR: ["how did you hear"]
         }
@@ -210,19 +216,15 @@ def main():
         driver.get("https://app.otta.com/jobs/theme/apply-via-otta")
         applications_in_session = 0
         while (application := JobApplication(driver)).minimum_application_requirement():
-            if DEBUG:
-                logger.info(f"Entering debugger at '{application.company_title}' listing page")
-                breakpoint()
+            driver.debug(f"Entering debugger at '{application.company_title}' listing page")
             buttons_panel = driver.find_element_by_data_id("desktop-action-panel")
             buttons_panel.find_elements(By.TAG_NAME, "button")[1].click()
             apply_modal = driver.find_element_by_data_id("apply-content")
             apply_modal.find_element(By.TAG_NAME, "button").click()
             question_elements = driver.find_elements_by_data_id("application-question-card")
-            questions = [i.text for i in question_elements]
+            questions = [driver.extract_question_info(i) for i in question_elements]
             application.answer(questions)
-            if DEBUG:
-                logger.info(f"Entering debugger at '{application.company_title}' application page")
-                breakpoint()
+            driver.debug(f"Entering debugger at '{application.company_title}' application page")
             for question_element in question_elements:
                 pass
             applications_in_session += 1
@@ -230,9 +232,7 @@ def main():
             logger.info(f"{applications_in_session} job applications made in this session")
         else:
             logger.warning("No job applications made - might be an error or new posts might have been depleted")
-            if DEBUG:
-                logger.warning("Entering debugger to investigate incident")
-                breakpoint()
+            driver.debug("Entering debugger to investigate incident", logging.WARNING)
 
 
 if __name__ == '__main__':

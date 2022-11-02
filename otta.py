@@ -12,12 +12,15 @@ from enum import Enum, auto
 import traceback
 import pathlib
 import logging
+import json
 import sys
 import os
 
 FILENAME = os.path.basename(__file__)
 AUTO = "--auto" in sys.argv
 DEBUG = "--debug" in sys.argv
+with open("config.json", "r") as f:
+    CONFIG = json.load(f)
 
 def get_logger():
     logger = logging.getLogger(FILENAME)
@@ -51,6 +54,9 @@ class Question:
         self.input_type = input_type
         self.sentiment = sentiment
 
+    def __repr__(self):
+        return f"(input type: {self.input_type.name}, sentiment: {self.sentiment.name})"
+
 class NoCredentialsException(Exception):
     """A custom error to reject execution if the proper env variables aren't set"""
     def __init__(self):
@@ -71,7 +77,7 @@ class DriverManager(webdriver.Firefox):
             else:
                 raise NoCredentialsException()
             super().__init__(service=FirefoxService(GeckoDriverManager().install()), options=options)
-            self.implicitly_wait(30)
+            self.implicitly_wait(CONFIG.get("wait") or 30)
             self.logger.info("Driver initialised")
         except Exception as e:
             self.logger.error(f"Crashed on startup with a {repr(e.__class__.__name__)}: view traceback below")
@@ -90,7 +96,7 @@ class DriverManager(webdriver.Firefox):
             self.logger.info("Script ran to completion: exiting")
         self.quit()
 
-    def debug(self, message: str, level: logging.INFO):
+    def debug(self, message: str, level=logging.INFO):
         """Breakpoint for debug mode"""
         if DEBUG:
             self.logger.log(level, message)
@@ -158,8 +164,8 @@ class DriverManager(webdriver.Firefox):
             Sentiment.HOW_DID_YOU_HEAR: ["how did you hear"]
         }
         threshold = 0
-        for key, value in semantic_clues.values():
-            hits = sum(s for s in value if s in text)
+        for key, value in semantic_clues.items():
+            hits = sum(1 for s in value if s in text.lower())
             if hits > threshold:
                 threshold = hits
                 sentiment = key
@@ -167,15 +173,19 @@ class DriverManager(webdriver.Firefox):
             self.logger.warning(f"Couldn't identify the sentiment for a question: {text}")
         return sentiment
 
-    def extract_question_info(self, element: WebElement):
+    def extract_question_info(self, elements: list[WebElement]):
         """
         We want to find out the meaning of the question and the type of input so we can boil it down
         to a Question object
         """
-        return Question(
-            self.extract_input_type(element.text), 
-            self.extract_sentiment(element.text)
-        )
+        for element in elements:
+            yield Question(
+                self.extract_input_type(element.text), 
+                self.extract_sentiment(element.text)
+            )
+
+    def enter_answer(self, element: WebElement, input_type: InputType, answer: str):
+        pass
 
 class JobApplication:
     """Used to gather the data and formulate our job application"""
@@ -203,8 +213,13 @@ class JobApplication:
     def minimum_application_requirement(self):
         return self.job_title is not None and self.company_title is not None
 
-    def answer(self, questions: list[str]):
-        pass
+    def answers(self, questions: list[Question]):
+        for question in questions:
+            if question.input_type == InputType.TEXTAREA:
+                pass
+            else:
+                pass
+            yield question.sentiment
 
 def main():
     logger = get_logger()
@@ -221,12 +236,12 @@ def main():
             buttons_panel.find_elements(By.TAG_NAME, "button")[1].click()
             apply_modal = driver.find_element_by_data_id("apply-content")
             apply_modal.find_element(By.TAG_NAME, "button").click()
-            question_elements = driver.find_elements_by_data_id("application-question-card")
-            questions = [driver.extract_question_info(i) for i in question_elements]
-            application.answer(questions)
+            question_elements = driver.find_elements_by_data_id("application-questions-card")
+            questions = [question for question in driver.extract_question_info(question_elements)]
+            answers = [answer for answer in application.answers(questions)]
             driver.debug(f"Entering debugger at '{application.company_title}' application page")
-            for question_element in question_elements:
-                pass
+            for element, question, answer in zip(question_elements, questions, answers):
+                driver.enter_answer(element, question.input_type, answer)
             applications_in_session += 1
         if applications_in_session > 0:
             logger.info(f"{applications_in_session} job applications made in this session")

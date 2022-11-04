@@ -21,6 +21,8 @@ AUTO = "--auto" in sys.argv
 DEBUG = "--debug" in sys.argv
 with open("config.json", "r") as f:
     CONFIG = json.load(f)
+with open("cover_letter.json") as f:
+    COVER_LETTER = json.load(f)
 
 def get_logger():
     logger = logging.getLogger(FILENAME)
@@ -139,6 +141,12 @@ class DriverManager(webdriver.Firefox):
         except:
             return None
 
+    def browse_to_application_page(self):
+        buttons_panel = self.find_element_by_data_id("desktop-action-panel")
+        buttons_panel.find_elements(By.TAG_NAME, "button")[1].click()
+        apply_modal = self.find_element_by_data_id("apply-content")
+        apply_modal.find_element(By.TAG_NAME, "button").click()
+
     def extract_input_type(self, text: str):
         try:
             input_instructions = text.split("\n")[-1].lower()
@@ -190,16 +198,14 @@ class DriverManager(webdriver.Firefox):
 class JobApplication:
     """Used to gather the data and formulate our job application"""
     def __init__(self, driver: DriverManager):
-        self.job_title = driver.page_data_text("job-title") or None
         try:
             self.company_title = driver.page_data_text("ottas-take").split("Otta's take on ")[-1]
         except IndexError:
             self.company_title = None
+        self.job_title = driver.page_data_text("job-title") or None
         self.technologies = driver.page_data_text("job-technology-used").split("\n") or None
         self.office_requirements = driver.page_data_text("office-day-requirements") or None
         self.salary = driver.page_data_text("salary-section").split("k")[0] or None
-        if self.salary is not None:
-            self.salary += 'k'
         self.location_description = driver.page_data_text_list("job-location-tag")
         self.industries = driver.page_data_text_list("company-sector-tag")
         self.benefits = driver.page_data_text_list("company-benefit-bullet")
@@ -211,7 +217,7 @@ class JobApplication:
             driver.logger.info(f"Data gathered for {self.company_title}")
 
     def minimum_application_requirement(self):
-        return self.job_title is not None and self.company_title is not None
+        return self.company_title is not None and self.job_title is not None
 
     def answers(self, questions: list[Question]):
         for question in questions:
@@ -232,10 +238,7 @@ def main():
         applications_in_session = 0
         while (application := JobApplication(driver)).minimum_application_requirement():
             driver.debug(f"Entering debugger at '{application.company_title}' listing page")
-            buttons_panel = driver.find_element_by_data_id("desktop-action-panel")
-            buttons_panel.find_elements(By.TAG_NAME, "button")[1].click()
-            apply_modal = driver.find_element_by_data_id("apply-content")
-            apply_modal.find_element(By.TAG_NAME, "button").click()
+            driver.browse_to_application_page()
             question_elements = driver.find_elements_by_data_id("application-questions-card")
             questions = [question for question in driver.extract_question_info(question_elements)]
             answers = [answer for answer in application.answers(questions)]

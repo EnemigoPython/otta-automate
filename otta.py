@@ -20,9 +20,9 @@ FILENAME = os.path.basename(__file__)
 AUTO = "--auto" in sys.argv
 DEBUG = "--debug" in sys.argv
 with open("config.json", "r") as f:
-    CONFIG = json.load(f)
+    CONFIG: dict[str, str] = json.load(f)
 with open("cover_letter.json") as f:
-    COVER_LETTER = json.load(f)
+    COVER_LETTER_DATA: dict[str, object] = json.load(f)
 
 def get_logger():
     logger = logging.getLogger(FILENAME)
@@ -60,12 +60,16 @@ class Question:
         return f"(input type: {self.input_type.name}, sentiment: {self.sentiment.name})"
 
 class NoCredentialsException(Exception):
-    """A custom error to reject execution if the proper env variables aren't set"""
+    """
+    A custom error to reject execution if the proper env variables aren't set
+    """
     def __init__(self):
         super().__init__("You need 'PROFILE_FILE' and 'USER' environment variables set to run this script")
 
 class DriverManager(webdriver.Firefox):
-    """A wrapper to run the Selenium driver as a context manager and inject our logger"""
+    """
+    A wrapper to run the Selenium driver as a context manager and inject our logger
+    """
     def __init__(self, logger: logging.Logger):
         self.logger = logger
         try:
@@ -99,17 +103,23 @@ class DriverManager(webdriver.Firefox):
         self.quit()
 
     def debug(self, message: str, level=logging.INFO):
-        """Breakpoint for debug mode"""
+        """
+        Breakpoint for debug mode
+        """
         if DEBUG:
             self.logger.log(level, message)
             breakpoint()
 
     def find_element_by_data_id(self, id: str):
-        """Find a SINGLE element using an xpath pattern on the `data-testid` tag"""
+        """
+        Find a SINGLE element using an xpath pattern on the `data-testid` tag
+        """
         return self.find_element(By.XPATH, f"//*[@data-testid='{id}']")
 
     def find_elements_by_data_id(self, id: str):
-        """Find MULTIPLE elements using an xpath pattern on the `data-testid` tag"""
+        """
+        Find MULTIPLE elements using an xpath pattern on the `data-testid` tag
+        """
         return self.find_elements(By.XPATH, f"//*[@data-testid='{id}']")
 
     def page_data_text(self, el: str):
@@ -184,7 +194,7 @@ class DriverManager(webdriver.Firefox):
     def extract_question_info(self, elements: list[WebElement]):
         """
         We want to find out the meaning of the question and the type of input so we can boil it down
-        to a Question object
+        to a `Question` object
         """
         for element in elements:
             yield Question(
@@ -196,7 +206,9 @@ class DriverManager(webdriver.Firefox):
         pass
 
 class JobApplication:
-    """Used to gather the data and formulate our job application"""
+    """
+    Used to gather the data and formulate our job application
+    """
     def __init__(self, driver: DriverManager):
         try:
             self.company_title = driver.page_data_text("ottas-take").split("Otta's take on ")[-1]
@@ -213,19 +225,75 @@ class JobApplication:
         self.job_involves = driver.page_data_text_list("job-involves-bullet")
         self.job_requirements = driver.page_data_text_list("job-requirements-bullet")
         self.web_link = driver.get_web_link()
-        if self.company_title:
+        if self.minimum_application_requirement():
             driver.logger.info(f"Data gathered for {self.company_title}")
 
     def minimum_application_requirement(self):
+        """
+        `bool` -> do we know the title of the job and company? If not, something is wrong or we're on a different page
+        """
         return self.company_title is not None and self.job_title is not None
+
+    def replace_templating(self, cover_letter: str):
+        """
+        Our cover letter data contains some custom templating that we need to convert to the correct values.
+        `@x//x`: this is a reused passage that points to a different piece of text we need to grab.
+        `$x`: this is a value that corresponds to a property stored in `JobApplication`.
+        """
+        cover_letter.replace("$company", self.company_title)
+        cover_letter.replace("$title", self.job_title)
+        return cover_letter
+
+    def append_cover_letter_section(self, name: str, section_dict: dict[str, str] | None, includes=False):
+        section = ""
+        add_base = True
+        if section_dict is not None:
+            for part in section_dict.lower():
+                if includes:
+                    try:
+                        included_key = [s for s in section_dict.keys() if part in s][0]
+                        if add_base:
+                            section += "\n" + COVER_LETTER_DATA[name]["base"]
+                            add_base = False
+                        cover_letter += section_dict[included_key]
+                    except IndexError:
+                        pass
+                elif passage := COVER_LETTER_DATA[name].get(part):
+                    if add_base:
+                        section += "\n" + COVER_LETTER_DATA[name]["base"]
+                        add_base = False
+                    cover_letter += passage
+        return section
+
+    def create_cover_letter(self):
+        """
+        Using the information we collected during `__init__`, generate our cover letter
+        """
+        cover_letter = COVER_LETTER_DATA["intro"]
+        for key, value in COVER_LETTER_DATA["title"].items():
+            if key in self.job_title:
+                cover_letter += value
+                break
+        cover_letter += self.append_cover_letter_section("technologies", self.technologies)
+        cover_letter += self.append_cover_letter_section("skills", self.job_involves)
+        cover_letter += self.append_cover_letter_section("industries", self.industries)
+        cover_letter += self.append_cover_letter_section("benefits", self.benefits, True)
+        cover_letter += "\n" + COVER_LETTER_DATA["conclusion"]
+        return self.replace_templating(cover_letter)
 
     def answers(self, questions: list[Question]):
         for question in questions:
-            if question.input_type == InputType.TEXTAREA:
-                pass
-            else:
-                pass
-            yield question.sentiment
+            if question.sentiment is Sentiment.COVER_LETTER:
+                yield self.create_cover_letter()
+            if question.sentiment is Sentiment.AFFIRM_RIGHT_TO_WORK:
+                yield "yes"
+            if question.sentiment is Sentiment.HOW_DID_YOU_HEAR:
+                yield "other"
+            if question.sentiment is Sentiment.NEED_SPONSORSHIP:
+                yield "no"
+            if question.sentiment is Sentiment.PRONOUNS:
+                yield "he/him"
+            yield ""
 
 def main():
     logger = get_logger()

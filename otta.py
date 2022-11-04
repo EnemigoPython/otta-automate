@@ -249,7 +249,7 @@ class JobApplication:
         add_base = True
         if section_list is not None:
             if includes:
-                included_keys = [s for s in section_list if any(COVER_LETTER_DATA[name].keys()) in s]
+                included_keys = [k for s in section_list for k in COVER_LETTER_DATA[name].keys() if any(k in s)]
                 for key in included_keys:
                     if add_base:
                         section += "\n" + COVER_LETTER_DATA[name]["base"]
@@ -277,6 +277,10 @@ class JobApplication:
         cover_letter += self.append_cover_letter_section("skills", self.job_involves)
         cover_letter += self.append_cover_letter_section("industries", self.industries)
         cover_letter += self.append_cover_letter_section("benefits", self.benefits, True)
+        for key, value in COVER_LETTER_DATA["work style"].items():
+            if key in self.office_requirements or key in self.location_description:
+                cover_letter += "\n" + value
+                break
         cover_letter += "\n" + COVER_LETTER_DATA["conclusion"]
         return self.replace_templating(cover_letter)
 

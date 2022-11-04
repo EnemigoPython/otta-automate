@@ -249,12 +249,12 @@ class JobApplication:
         add_base = True
         if section_list is not None:
             if includes:
-                included_keys = [s for s in section_list if part in s] #FIXME WHEN NOT SO HUNGRY
+                included_keys = [s for s in section_list if any(COVER_LETTER_DATA[name].keys()) in s]
                 for key in included_keys:
                     if add_base:
                         section += "\n" + COVER_LETTER_DATA[name]["base"]
                         add_base = False
-                    cover_letter += section_list[key]
+                    cover_letter += COVER_LETTER_DATA[key]
             else:
                 for part in section_list.lower():
                     if passage := COVER_LETTER_DATA[name].get(part):

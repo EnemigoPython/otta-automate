@@ -244,25 +244,24 @@ class JobApplication:
         cover_letter.replace("$title", self.job_title)
         return cover_letter
 
-    def append_cover_letter_section(self, name: str, section_dict: dict[str, str] | None, includes=False):
+    def append_cover_letter_section(self, name: str, section_list: list[str] | None, includes=False):
         section = ""
         add_base = True
-        if section_dict is not None:
-            for part in section_dict.lower():
-                if includes:
-                    try:
-                        included_key = [s for s in section_dict.keys() if part in s][0]
-                        if add_base:
-                            section += "\n" + COVER_LETTER_DATA[name]["base"]
-                            add_base = False
-                        cover_letter += section_dict[included_key]
-                    except IndexError:
-                        pass
-                elif passage := COVER_LETTER_DATA[name].get(part):
+        if section_list is not None:
+            if includes:
+                included_keys = [s for s in section_list if part in s] #FIXME WHEN NOT SO HUNGRY
+                for key in included_keys:
                     if add_base:
                         section += "\n" + COVER_LETTER_DATA[name]["base"]
                         add_base = False
-                    cover_letter += passage
+                    cover_letter += section_list[key]
+            else:
+                for part in section_list.lower():
+                    if passage := COVER_LETTER_DATA[name].get(part):
+                        if add_base:
+                            section += "\n" + COVER_LETTER_DATA[name]["base"]
+                            add_base = False
+                        cover_letter += passage
         return section
 
     def create_cover_letter(self):

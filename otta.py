@@ -238,11 +238,11 @@ class JobApplication:
     def replace_templating(self, cover_letter: str):
         """
         Our cover letter data contains some custom templating that we need to convert to the correct values.
-        `@x//x`: this is a reused passage that points to a different piece of text we need to grab.
+        `@x//x@`: this is a reused passage that points to a different piece of text we need to grab.
         `$x`: this is a value that corresponds to a property stored in `JobApplication`.
         """
-        cover_letter.replace("$company", self.company_title)
-        cover_letter.replace("$title", self.job_title)
+        cover_letter = cover_letter.replace("$company", self.company_title)
+        cover_letter = cover_letter.replace("$title", self.job_title)
         return cover_letter
 
     def append_cover_letter_section(self, name: str, section_list: list[str] | None, includes=False):
@@ -289,13 +289,13 @@ class JobApplication:
         for question in questions:
             if question.sentiment is Sentiment.COVER_LETTER:
                 yield self.create_cover_letter()
-            if question.sentiment is Sentiment.AFFIRM_RIGHT_TO_WORK:
+            elif question.sentiment is Sentiment.AFFIRM_RIGHT_TO_WORK:
                 yield "yes"
-            if question.sentiment is Sentiment.HOW_DID_YOU_HEAR:
+            elif question.sentiment is Sentiment.HOW_DID_YOU_HEAR:
                 yield "other"
-            if question.sentiment is Sentiment.NEED_SPONSORSHIP:
+            elif question.sentiment is Sentiment.NEED_SPONSORSHIP:
                 yield "no"
-            if question.sentiment is Sentiment.PRONOUNS:
+            elif question.sentiment is Sentiment.PRONOUNS:
                 yield "he/him"
             else:
                 yield ""

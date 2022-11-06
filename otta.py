@@ -15,6 +15,7 @@ import logging
 import json
 import sys
 import os
+import re
 
 FILENAME = os.path.basename(__file__)
 AUTO = "--auto" in sys.argv
@@ -249,19 +250,19 @@ class JobApplication:
         add_base = True
         if section_list is not None:
             if includes:
-                included_keys = [k for s in section_list for k in COVER_LETTER_DATA[name].keys() if any(k in s)]
+                included_keys = [k for s in section_list for k in COVER_LETTER_DATA[name].keys() if k in s.lower()]
                 for key in included_keys:
                     if add_base:
                         section += "\n" + COVER_LETTER_DATA[name]["base"]
                         add_base = False
-                    cover_letter += COVER_LETTER_DATA[key]
+                    section += COVER_LETTER_DATA[name][key]
             else:
-                for part in section_list.lower():
-                    if passage := COVER_LETTER_DATA[name].get(part):
+                for part in section_list:
+                    if passage := COVER_LETTER_DATA[name].get(part.lower()):
                         if add_base:
                             section += "\n" + COVER_LETTER_DATA[name]["base"]
                             add_base = False
-                        cover_letter += passage
+                        section += passage
         return section
 
     def create_cover_letter(self):
@@ -278,7 +279,7 @@ class JobApplication:
         cover_letter += self.append_cover_letter_section("industries", self.industries)
         cover_letter += self.append_cover_letter_section("benefits", self.benefits, True)
         for key, value in COVER_LETTER_DATA["work style"].items():
-            if key in self.office_requirements or key in self.location_description:
+            if (self.office_requirements is not None and key in self.office_requirements) or key in self.location_description:
                 cover_letter += "\n" + value
                 break
         cover_letter += "\n" + COVER_LETTER_DATA["conclusion"]
@@ -296,7 +297,8 @@ class JobApplication:
                 yield "no"
             if question.sentiment is Sentiment.PRONOUNS:
                 yield "he/him"
-            yield ""
+            else:
+                yield ""
 
 def main():
     logger = get_logger()

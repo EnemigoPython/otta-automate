@@ -23,7 +23,7 @@
         "react": "I have used React as my frontend in many projects and I am familiar with popular server-side extensions such as next.js. ",
         "angular": "I have worked in Angular codebases so that is an area of comfort for me. ",
         "svelte": "Svelte is my favourite Javascript framework - I love how ergonomic it is for writing beautiful code. I love to see companies adopting it and I'm looking forward to using it for the first time in a work environment. ",
-        "aws": "Cloud is the future for computing. Understanding this, I have educated myself on the rich world of AWS and components such as lambda and S3.",
+        "aws": "Cloud is the future for computing. Understanding this, I have educated myself on the rich world of AWS and components such as lambda and S3. ",
         "sql": "As a full-stack developer, I have extensive experience working with relational databases and writing SQL queries and stored procedures. I understand the importance of security and reliability, and have been tasked with DevOps tasks at my current role. ",
         "django": "I have experience using battery-included web frameworks in Python such as django, as well as its lightweight counterpart flask. I have an appreciation for their different use cases and relative strengths and weaknesses. ",
         "flask": "@technologies//django",
@@ -64,7 +64,8 @@
         "flexible working": "Hybrid working is my first choice, so I appreciate that opportunity and will make use of it. ",
         "mindfulness": "Mental health is very important to everyone. It's great to see more companies being aware of that fact and nurturing a positive environment. ",
         "gym": "I am very happy about the opportunity to go to the gym, as a healthy body means a healthy mind. ",
-        "cycle": "I would love to cycle as it's a great form of exercise, so it was good to see that included in the benefits. "
+        "cycle": "I would love to cycle as it's a great form of exercise, so it was good to see that included in the benefits. ",
+        "personal development": "The focus on personal development is something that is important to me as someone that always wants to evolve with the industry. "
     },
     "work style": {
         "remote": "Remote working is amazing and the future, so that is a definite plus for me. ",

@@ -251,9 +251,14 @@ class JobApplication:
                 cover_letter = cover_letter.replace(pointer, section, 1)
             # we get rid of all the other instances as it'll be the same section duplicated
             cover_letter = cover_letter.replace(pointer, "")
-        breakpoint()
         cover_letter = cover_letter.replace("$company", self.company_title)
         cover_letter = cover_letter.replace("$title", self.job_title)
+        if len(days_holiday := [b for b in self.benefits if "days holiday" in b.lower()]) > 0:
+            try:
+                days = days_holiday[0].split("days holiday")[0].split()[-1]
+                cover_letter = cover_letter.replace("$days", int(days))
+            except (TypeError, IndexError):
+                cover_letter = cover_letter.replace("$days", "the offered amount of")
         return cover_letter
 
     def append_cover_letter_section(self, name: str, section_list: list[str] | None, includes=False):

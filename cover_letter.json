@@ -49,10 +49,10 @@
         "numpy": "@technologies//pandas#"
     },
     "industries": {
-        "base": "It's important to work in a field that is interesting and where you feel you can develop. ",
+        "base": "It's important to work in a field that complements your strengths, that interests you and where you feel you can develop. ",
         "fintech": "A fintech environment is an exciting prospect for me because many of the most exciting innovations come from the space. I understand too that excellence is demanded and I am ready for that challenge. ",
         "medtech": "The medical field in technology is where some of the biggest impact can be made for the future of humanity, and it contains some of the most exciting tech to work on. ",
-        "analytics": "Data is at the core of all programming, and transforming it into a valuable substance is a tricky but rewarding form of work. ",
+        "analytics": "Data is at the core of all programming. Finding patterns and transforming data into substance is something that I understand well and have a lot of practice doing. ",
         "big data": "@industries//analytics#",
         "charity": "Being in a field where I am working to help people is a true motivator for me. ",
         "artifical intelligence": "I continue to be fascinated by the AI space, and hope to learn more about ML and the problem space that is at the frontier of humanity in the present day. "
@@ -63,7 +63,7 @@
         "insurance": "It's always nice to be insured by your company as it demonstrates real compassion for workers. ",
         "flexible working": "Hybrid working is my first choice, so I appreciate that opportunity and will make use of it. ",
         "mindfulness": "Mental health is very important to everyone. It's great to see more companies being aware of that fact and nurturing a positive environment. ",
-        "gym": "I am very happy about the opportunity to go to the gym, as a healthy body means a healthy mind. ",
+        "gym": "The gym membership is great and will complement my plans. ",
         "cycle": "I would love to cycle as it's a great form of exercise, so it was good to see that included in the benefits. ",
         "personal development": "The focus on personal development is something that is important to me as someone that always wants to evolve with the industry. "
     },

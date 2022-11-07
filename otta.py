@@ -204,7 +204,19 @@ class DriverManager(webdriver.Firefox):
             )
 
     def enter_answer(self, element: WebElement, input_type: InputType, answer: str):
-        pass
+        if input_type is InputType.TEXTAREA:
+            element.click()
+            text_area = element.find_element(By.TAG_NAME, "textarea")
+            text_area.send_keys(answer)
+            save_btn = element.find_elements(By.TAG_NAME, "button")[1]
+            save_btn.click()
+        elif input_type is InputType.CHECKBOX:
+            pass
+        else:
+            pass
+
+    def submit_application(self):
+        self.find_element_by_data_id("send-application").click()
 
 class JobApplication:
     """
@@ -334,6 +346,7 @@ def main():
             driver.debug(f"Entering debugger at '{application.company_title}' application page")
             for element, question, answer in zip(question_elements, questions, answers):
                 driver.enter_answer(element, question.input_type, answer)
+            breakpoint()
             applications_in_session += 1
         if applications_in_session > 0:
             logger.info(f"{applications_in_session} job applications made in this session")

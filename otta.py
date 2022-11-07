@@ -238,9 +238,20 @@ class JobApplication:
     def replace_templating(self, cover_letter: str):
         """
         Our cover letter data contains some custom templating that we need to convert to the correct values.
-        `@x//x@`: this is a reused passage that points to a different piece of text we need to grab.
+        `@x//y#`: this is a reused passage that points to a different piece of text we need to grab.
         `$x`: this is a value that corresponds to a property stored in `JobApplication`.
         """
+        template_pointers = re.findall(r"@.+\#", cover_letter)
+        for pointer in template_pointers:
+            category = pointer.split("//")[0][1:]
+            key = pointer.split("//")[1][:-1]
+            section = COVER_LETTER_DATA[category][key]
+            if section not in cover_letter:
+                # if it isn't already in there, add only the first of this section
+                cover_letter = cover_letter.replace(pointer, section, 1)
+            # we get rid of all the other instances as it'll be the same section duplicated
+            cover_letter = cover_letter.replace(pointer, "")
+        breakpoint()
         cover_letter = cover_letter.replace("$company", self.company_title)
         cover_letter = cover_letter.replace("$title", self.job_title)
         return cover_letter

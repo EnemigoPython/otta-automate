@@ -9,7 +9,7 @@
     {
         "base": "First of all, I think I am a great match for the technical proficiencies demanded by the role. ",
         "python": "I have spent more days in the past two years writing Python than anything else. While programming is always a learning experience, I am very confident with the level I have reached so far and my ability to write high quality Python code. What's more, I enjoy the process thoroughly. ",
-        "pytest": "@skills//testing@",
+        "pytest": "@skills//testing#",
         "javascript": "Javascript is an essential tool to have in your arsenal as a web developer as it is the pillar of modern websites. I have used it extensively in personal and professional projects on both the front and back end. ",
         "typescript": "Typescript is an amazing solution to write safer Javascript code and I made extensive use of it while writing an important data API at work. ",
         "node.js": "I am very comfortable working with node and have made use of it in combination with core libraries such as express and socketio, along with others in the NPM ecosystem. ",
@@ -18,7 +18,7 @@
         ".net": "I am an avid user of core microsoft tools built around NPM, including C# applications and Powershell scripting. ",
         "powershell": "Powershell is my favourite scripting language because of its modern features, and I have written custom scripts for a variety of purposes such as DevOps and testing. ",
         "bash": "I am familiar with the world of scripting languages and have used linux-based tools such as bash and curl to aid my development projects. ",
-        "linux": "@technologies//bash@",
+        "linux": "@technologies//bash#",
         "rust": "I have dipped my toe into rust several times over the past year and have loved the experience. I would jump at the chance to dedicate myself to learning it more in a professional environment. ",
         "react": "I have used React as my frontend in many projects and I am familiar with popular server-side extensions such as next.js. ",
         "angular": "I have worked in Angular codebases so that is an area of comfort for me. ",
@@ -26,34 +26,34 @@
         "aws": "Understanding that cloud computing is the predominant direction, I have educated myself on the world of AWS, including components such as lambda and S3. ",
         "sql": "As a full-stack developer, I have extensive experience working with relational databases and writing SQL queries and stored procedures. I understand the importance of security and reliability, and have been tasked with DevOps tasks at my current role. ",
         "django": "I have experience using battery-included web frameworks in Python such as django, as well as its lightweight counterpart flask. I have an appreciation for their different use cases and relative strengths and weaknesses. ",
-        "flask": "@technologies//django@",
-        "git": "@skills//version control@",
+        "flask": "@technologies//django#",
+        "git": "@skills//version control#",
         "jira": "As a jira admin, I have experience creating boards, managing projects and using native automation on the platform. ",
         "pandas": "I use pandas all the time in areas where complex data is involved and performance is a real concern. ",
-        "numpy": "@technologies//pandas@"
+        "numpy": "@technologies//pandas#"
     },
     "skills": {
         "base": "In broader terms, my experience and the skills I have acquired are also of relevance for this role. ",
         "communication": "If you are looking for someone with good communication skills, then this is an area where I am qualified more than the usual candidate; studying English at university taught me how to refine my speech and adapt to my audience. ",
-        "test-driven": "@skills//testing@",
+        "test-driven": "@skills//testing#",
         "ci/cd": "I have experience working with and configuring an in-house CI/CD system. ",
-        "ci": "@skills//ci/cd@",
+        "ci": "@skills//ci/cd#",
         "testing": "My time as an engineer has included QA testing - both manual and with automation tools such as pytest and selenium. ",
         "version control": "I have worked extensively with git and TFS so I am proficient in version control systems. ",
-        "qa": "@skills//testing@",
-        "database": "@technologies//sql@",
-        "devops": "@technologies//sql@",
-        "jira": "@technologies//jira@",
-        "automation": "@skills//testing@",
-        "pandas": "@technologies//pandas@",
-        "numpy": "@technologies//pandas@"
+        "qa": "@skills//testing#",
+        "database": "@technologies//sql#",
+        "devops": "@technologies//sql#",
+        "jira": "@technologies//jira#",
+        "automation": "@skills//testing#",
+        "pandas": "@technologies//pandas#",
+        "numpy": "@technologies//pandas#"
     },
     "industries": {
         "base": "I think it's important to be working on something interesting, but that isn't the only important thing. ",
         "fintech": "A fintech environment is an exciting prospect for me because many of the most exciting innovations come from the space. I understand too that excellence is demanded and I am ready for that challenge. ",
         "medtech": "The medical field in technology is where some of the biggest impact can be made for the future of humanity, and it contains some of the most exciting tech to work on. ",
         "analytics": "Data is at the core of all programming, and transforming it into a valuable substance is a tricky but rewarding form of work. ",
-        "big data": "@industries//analytics@",
+        "big data": "@industries//analytics#",
         "charity": "Being in a field where I am working to help people is a true motivator for me. ",
         "artifical intelligence": "I continue to be fascinated by the AI space, and hope to learn more about ML and the problem space that is at the frontier of humanity in the present day. "
     },
@@ -69,7 +69,7 @@
     },
     "work style": {
         "remote": "Remote working is amazing and the future, so that is a definite plus for me. ",
-        "hybrid": "@benefits//flexible working@",
+        "hybrid": "@benefits//flexible working#",
         "office": "I don't mind coming into the office and enjoy the personal connection it enables between colleagues. "
     },
     "conclusion": "I hope I have sufficiently made the case for why I should be considered. Thanks for your time and I hope to hear from you soon."

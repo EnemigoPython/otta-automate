@@ -8,8 +8,10 @@ from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.common.by import By
 from webdriver_manager.firefox import GeckoDriverManager
 from dotenv import load_dotenv
+from datetime import datetime
 from enum import Enum, auto
 import traceback
+import sqlite3
 import pathlib
 import logging
 import json
@@ -17,7 +19,9 @@ import sys
 import os
 import re
 
+# init constants
 FILENAME = os.path.basename(__file__)
+PATHROOT = pathlib.WindowsPath(r"C:\\")
 OTTA_URL = "https://app.otta.com/jobs/theme/apply-via-otta"
 AUTO = "--auto" in sys.argv
 DEBUG = "--debug" in sys.argv
@@ -34,6 +38,11 @@ def get_logger():
     handler.setFormatter(formatter)
     logger.addHandler(handler)
     return logger
+
+def get_db_connection():
+    path = PATHROOT / "Users" / os.getenv("USER") / "data" / os.getenv("dbname")
+    con = sqlite3.connect(path)
+    return con
 
 class InputType(Enum):
     TEXTAREA = auto()
@@ -78,8 +87,7 @@ class DriverManager(webdriver.Firefox):
             options = FirefoxOptions()
             if (profile := os.getenv("PROFILE_FILE")) and (user := os.getenv("USER")):
                 self.logger.info(f"Using profile found for {user}: {profile}")
-                pathroot = pathlib.WindowsPath(r"C:\\")
-                path = pathroot / "Users" / user / "AppData" / "Local" / "Mozilla" / "Firefox" / "Profiles" / profile
+                path = PATHROOT / "Users" / user / "AppData" / "Local" / "Mozilla" / "Firefox" / "Profiles" / profile
                 options.add_argument("--profile")
                 options.add_argument(str(path))
             else:
@@ -330,11 +338,30 @@ class JobApplication:
             else:
                 yield ""
 
+    def insert_db_row(self, con: sqlite3.Connection):
+        """
+        We log the application into the database in the `job_application` table with these columns:
+        title, company, salary, date_applied, link, method=auto
+        """
+        salary = None if self.salary is None else f"{self.salary}K"
+        data = (
+            self.job_title, 
+            self.company_title, 
+            salary, 
+            str(datetime.now()), 
+            self.web_link, 
+            "auto"
+        )
+        cur = con.cursor()
+        cur.execute("INSERT INTO job_application VALUES (?, ?, ?, ?, ?)", data)
+        con.commit()
+
 def main():
     logger = get_logger()
     logger.info(f"Started execution of {FILENAME}")
     logger.info(f"Execution mode: '{'automatic' if AUTO else 'manual'}', debug mode: '{'on' if DEBUG else 'off'}'")
     load_dotenv()
+    con = get_db_connection()
 
     with DriverManager(logger) as driver:
         driver.get(OTTA_URL)
@@ -348,7 +375,8 @@ def main():
             driver.debug(f"Entering debugger at '{application.company_title}' application page")
             for element, question, answer in zip(question_elements, questions, answers):
                 driver.enter_answer(element, question.input_type, answer)
-            driver.submit_application()
+            driver.submit_application(application.job_title)
+            application.insert_db_row(con)
             applications_in_session += 1
             driver.get(OTTA_URL)
         if applications_in_session > 0:

@@ -18,6 +18,7 @@ import os
 import re
 
 FILENAME = os.path.basename(__file__)
+OTTA_URL = "https://app.otta.com/jobs/theme/apply-via-otta"
 AUTO = "--auto" in sys.argv
 DEBUG = "--debug" in sys.argv
 with open("config.json", "r") as f:
@@ -215,8 +216,9 @@ class DriverManager(webdriver.Firefox):
         else:
             pass
 
-    def submit_application(self):
+    def submit_application(self, title: str):
         self.find_element_by_data_id("send-application").click()
+        self.logger.log(f"Applied to '{title}'")
 
 class JobApplication:
     """
@@ -335,7 +337,7 @@ def main():
     load_dotenv()
 
     with DriverManager(logger) as driver:
-        driver.get("https://app.otta.com/jobs/theme/apply-via-otta")
+        driver.get(OTTA_URL)
         applications_in_session = 0
         while (application := JobApplication(driver)).minimum_application_requirement():
             driver.debug(f"Entering debugger at '{application.company_title}' listing page")
@@ -346,8 +348,9 @@ def main():
             driver.debug(f"Entering debugger at '{application.company_title}' application page")
             for element, question, answer in zip(question_elements, questions, answers):
                 driver.enter_answer(element, question.input_type, answer)
-            breakpoint()
+            driver.submit_application()
             applications_in_session += 1
+            driver.get(OTTA_URL)
         if applications_in_session > 0:
             logger.info(f"{applications_in_session} job applications made in this session")
         else:

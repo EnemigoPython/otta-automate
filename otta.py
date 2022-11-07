@@ -1,12 +1,14 @@
-from selenium import webdriver
+# selenium
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.firefox.service import Service as FirefoxService
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.common.by import By
+from selenium import webdriver
+
+# webdriver_manager
 from webdriver_manager.firefox import GeckoDriverManager
+
+# standard lib
 from dotenv import load_dotenv
 from datetime import datetime
 from enum import Enum, auto

@@ -14,6 +14,7 @@ import traceback
 import sqlite3
 import pathlib
 import logging
+import time
 import json
 import sys
 import os
@@ -227,6 +228,7 @@ class DriverManager(webdriver.Firefox):
     def submit_application(self, title: str):
         self.find_element_by_data_id("send-application").click()
         self.logger.log(f"Applied to '{title}'")
+        time.sleep(2) # we aren't in a rush, just give the POST request a chance to send off
 
 class JobApplication:
     """

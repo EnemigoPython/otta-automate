@@ -96,6 +96,8 @@ class DriverManager(webdriver.Firefox):
                 options.add_argument(str(path))
             else:
                 raise NoCredentialsException()
+            if AUTO:
+                options.add_argument("--headless")
             super().__init__(service=FirefoxService(GeckoDriverManager().install()), options=options)
             self.implicitly_wait(CONFIG.get("wait") or 30)
             self.logger.info("Driver initialised")

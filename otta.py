@@ -379,7 +379,11 @@ def main():
     with DriverManager(logger, con) as driver:
         driver.get(OTTA_URL)
         applications_in_session = 0
+        failed_company = None
         while (application := JobApplication(driver)).minimum_application_requirement():
+            if application.company_title == failed_company:
+                logger.warning(f"Encountered {failed_company}: skipping to next company")
+                driver.find_element_by_data_id("next-button").click()
             driver.debug(f"Entering debugger at '{application.company_title}' listing page")
             driver.browse_to_application_page()
             question_elements = driver.find_elements_by_data_id("application-questions-card")
@@ -396,6 +400,7 @@ def main():
                 if DEBUG:
                     raise e
                 else:
+                    failed_company = application.company_title
                     logger.warning(f"Failed to apply to job {application.company_title} due to '{e.__class__.__name__}' encountered")
                     logger.warning("Not in debug mode - continuing")
             driver.get(OTTA_URL)

@@ -84,8 +84,9 @@ class DriverManager(webdriver.Firefox):
     """
     A wrapper to run the Selenium driver as a context manager and inject our logger
     """
-    def __init__(self, logger: logging.Logger):
+    def __init__(self, logger: logging.Logger, con: sqlite3.Connection):
         self.logger = logger
+        self.con = con
         try:
             options = FirefoxOptions()
             if (profile := os.getenv("PROFILE_FILE")) and (user := os.getenv("USER")):
@@ -113,6 +114,7 @@ class DriverManager(webdriver.Firefox):
             self.logger.error(traceback.format_exc())
         else:
             self.logger.info("Script ran to completion: exiting")
+        self.con.close()
         self.quit()
 
     def debug(self, message: str, level=logging.INFO):
@@ -227,10 +229,19 @@ class DriverManager(webdriver.Firefox):
         else:
             pass
 
-    def submit_application(self, title: str):
+    def submit_application(self):
         self.find_element_by_data_id("send-application").click()
-        self.logger.log(f"Applied to '{title}'")
         time.sleep(2) # we aren't in a rush, just give the POST request a chance to send off
+
+    def insert_db_row(self, data):
+        """
+        We log the application into the database in the `job_application` table with these columns:
+        title, company, salary, date_applied, link, method=auto
+        """
+        cur = self.con.cursor()
+        cur.execute("INSERT INTO job_application VALUES (?, ?, ?, ?, ?)", data)
+        self.con.commit()
+        self.logger.log(f"Applied to '{data.job_title}'")
 
 class JobApplication:
     """
@@ -313,7 +324,7 @@ class JobApplication:
         """
         cover_letter = COVER_LETTER_DATA["intro"]
         for key, value in COVER_LETTER_DATA["title"].items():
-            if key in self.job_title:
+            if key in self.job_title.lower():
                 cover_letter += value
                 break
         cover_letter += self.append_cover_letter_section("technologies", self.technologies)
@@ -342,13 +353,13 @@ class JobApplication:
             else:
                 yield ""
 
-    def insert_db_row(self, con: sqlite3.Connection):
+    @property
+    def data(self):
         """
-        We log the application into the database in the `job_application` table with these columns:
-        title, company, salary, date_applied, link, method=auto
+        Defining data to send to the DriverManager
         """
         salary = None if self.salary is None else f"{self.salary}K"
-        data = (
+        return (
             self.job_title, 
             self.company_title, 
             salary, 
@@ -356,9 +367,7 @@ class JobApplication:
             self.web_link, 
             "auto"
         )
-        cur = con.cursor()
-        cur.execute("INSERT INTO job_application VALUES (?, ?, ?, ?, ?)", data)
-        con.commit()
+
 
 def main():
     logger = get_logger()
@@ -367,7 +376,7 @@ def main():
     load_dotenv()
     con = get_db_connection()
 
-    with DriverManager(logger) as driver:
+    with DriverManager(logger, con) as driver:
         driver.get(OTTA_URL)
         applications_in_session = 0
         while (application := JobApplication(driver)).minimum_application_requirement():
@@ -379,8 +388,8 @@ def main():
             driver.debug(f"Entering debugger at '{application.company_title}' application page")
             for element, question, answer in zip(question_elements, questions, answers):
                 driver.enter_answer(element, question.input_type, answer)
-            driver.submit_application(application.job_title)
-            application.insert_db_row(con)
+            driver.submit_application()
+            driver.insert_db_row(application.data)
             applications_in_session += 1
             driver.get(OTTA_URL)
         if applications_in_session > 0:

@@ -239,9 +239,9 @@ class DriverManager(webdriver.Firefox):
         title, company, salary, date_applied, link, method=auto
         """
         cur = self.con.cursor()
-        cur.execute("INSERT INTO job_application VALUES (?, ?, ?, ?, ?)", data)
+        cur.execute("INSERT INTO job_application VALUES (?, ?, ?, ?, ?, ?)", data)
         self.con.commit()
-        self.logger.log(f"Applied to '{data.job_title}'")
+        self.logger.info(f"Applied for role as '{data[0]}' at '{data[1]}'")
 
 class JobApplication:
     """
@@ -365,7 +365,7 @@ class JobApplication:
             salary, 
             str(datetime.now()), 
             self.web_link, 
-            "auto"
+            "otta-auto" if AUTO else "otta-manual"
         )
 
 
@@ -386,11 +386,18 @@ def main():
             questions = [question for question in driver.extract_question_info(question_elements)]
             answers = [answer for answer in application.answers(questions)]
             driver.debug(f"Entering debugger at '{application.company_title}' application page")
-            for element, question, answer in zip(question_elements, questions, answers):
-                driver.enter_answer(element, question.input_type, answer)
-            driver.submit_application()
-            driver.insert_db_row(application.data)
-            applications_in_session += 1
+            try:
+                for element, question, answer in zip(question_elements, questions, answers):
+                    driver.enter_answer(element, question.input_type, answer)
+                driver.submit_application()
+                driver.insert_db_row(application.data)
+                applications_in_session += 1
+            except Exception as e:
+                if DEBUG:
+                    raise e
+                else:
+                    logger.warning(f"Failed to apply to job {application.company_title} due to '{e.__class__.__name__}' encountered")
+                    logger.warning("Not in debug mode - continuing")
             driver.get(OTTA_URL)
         if applications_in_session > 0:
             logger.info(f"{applications_in_session} job applications made in this session")

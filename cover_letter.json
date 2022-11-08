@@ -1,20 +1,20 @@
 {
-    "intro": "Hello, my name is Basil and I would like to put forward the case of why I would love to work at $company, where I think I would be an excellent fit. ",
+    "intro": "Hi, my name is Basil. This looks like a very interesting opportunity for me and I would like to put forward the case for why I would be an excellent fit at $company. First of all, I have experience as both a front and backend engineer and consider myself proficient in both, with a slight preference for backend. ",
     "title": {
-        "senior": "I am very enthusiastic at the prospect of joining the team - perhaps $title is beyond my current level of experience but I would work to prove my worth when joining in any capacity. ",
+        "senior": "I am very enthusiastic at the prospect of joining the team - perhaps $title might seem a few more years beyond my current level of experience but I would work hard to prove my worth when joining in any capacity. ",
         "junior": "The title of $title is an exciting prospect for me. As a developer with over a year and a half of industry experience it is a role and responsibility that I am ready to meet. ",
         "analyst": "With a keen eye for detail and patterns, I think I would thrive in a role as $title. "
     },
     "technologies":
     {
-        "base": "First of all, I think I am a great match for the technical proficiencies demanded by the role. ",
+        "base": "Beyond this, I think I am a great match for the specific technical proficiencies asked for in this role listing. ",
         "python": "I have spent more days in the past two years writing Python than anything else. While programming is always a learning experience, I am very confident with the level I have reached so far and my ability to write high quality Python code. What's more, I enjoy the process thoroughly. ",
         "pytest": "@skills//testing#",
         "javascript": "Javascript is an essential tool to have in your arsenal as a web developer as it is the pillar of modern websites. I have used it extensively in personal and professional projects on both the front and back end. ",
         "typescript": "Typescript is an amazing solution to write safer Javascript code and I made extensive use of it while writing an important data API at work. ",
         "node.js": "I am very comfortable working with node and have made use of it in combination with core libraries such as express and socketio, along with others in the NPM ecosystem. ",
         "deno": "Deno is a fascinating new development in the Javascript ecosystem. As a developer primarily in node.js, I have had my eye on it as a solution for many of the latter's shortcomings. ",
-        "c#": "C# was my introduction to statically typed languages and I have made use of it at work many times since. I have enjoyed out-of-the-box utilities while using Blazor to write enterprise-grade API code. ",
+        "c#": "C# was my introduction to statically typed languages and I have used it both at work and in personal projects since, including with the Blazor and Swagger UI libraries. ",
         ".net": "I am an avid user of core microsoft tools built around NPM, including C# applications and Powershell scripting. ",
         "powershell": "Powershell is my favourite scripting language because of its modern features, and I have written custom scripts for a variety of purposes such as DevOps and testing. ",
         "bash": "I am familiar with the world of scripting languages and have used linux-based tools such as bash and curl to aid my development projects. ",
@@ -23,7 +23,7 @@
         "react": "I have used React as my frontend in many projects and I am familiar with popular server-side extensions such as next.js. ",
         "angular": "I have worked in Angular codebases so that is an area of comfort for me. ",
         "svelte": "Svelte is my favourite Javascript framework - I love how ergonomic it is for writing beautiful code. I love to see companies adopting it and I'm looking forward to using it for the first time in a work environment. ",
-        "aws": "Understanding that cloud computing is the predominant direction, I have educated myself on the world of AWS, including components such as lambda and S3. ",
+        "aws": "I understand the fundamentals of cloud computing and have educated myself on the world of AWS, including components such as lambda and S3. ",
         "sql": "As a full-stack developer, I have extensive experience working with relational databases and writing SQL queries and stored procedures. I understand the importance of security and reliability, and have been tasked with DevOps tasks at my current role. ",
         "django": "I have experience using battery-included web frameworks in Python such as django, as well as its lightweight counterpart flask. I have an appreciation for their different use cases and relative strengths and weaknesses. ",
         "flask": "@technologies//django#",
@@ -46,31 +46,33 @@
         "jira": "@technologies//jira#",
         "automation": "@skills//testing#",
         "pandas": "@technologies//pandas#",
-        "numpy": "@technologies//pandas#"
+        "numpy": "@technologies//pandas#",
+        "cloud": "@technologies//aws#"
     },
     "industries": {
-        "base": "It's important to work in a field that complements your strengths, that interests you and where you feel you can develop. ",
-        "fintech": "A fintech environment is an exciting prospect for me because many of the most exciting innovations come from the space. I understand too that excellence is demanded and I am ready for that challenge. ",
-        "medtech": "The medical field in technology is where some of the biggest impact can be made for the future of humanity, and it contains some of the most exciting tech to work on. ",
-        "analytics": "Data is at the core of all programming. Finding patterns and transforming data into substance is something that I understand well and have a lot of practice doing. ",
+        "base": "It's also great to work somewhere that is forward-thinking, exciting, and where I can learn lots of new things. ",
+        "fintech": "A fintech environment is an exciting prospect for me: it is where some of the most exciting tech is being developed on the bleeding edge. I understand too that a lot is expected in the field and I am ready for the challenge. ",
+        "medtech": "The medical field in technology is where some of the biggest impact can be made for the future of humanity. Not only that, it also contains some of the most exciting tech. I am far from a medical expert but I would be very happy to join a team that can teach me new things. ",
+        "analytics": "Data is at the core of all programming. Finding patterns and transforming data into substance is something that I understand well and have a lot of practice doing. Of course, there is always more to learn and I would be very happy to join a team that can teach me new things. ",
         "big data": "@industries//analytics#",
-        "charity": "Being in a field where I am working to help people is a true motivator for me. ",
-        "artifical intelligence": "I continue to be fascinated by the AI space, and hope to learn more about ML and the problem space that is at the frontier of humanity in the present day. "
+        "charity": "Being in a field where I am working to help people is also a true motivator for me. ",
+        "artifical intelligence": "I have always been fascinated by the AI space, so I hope to learn more about ML and the problem space that is at the frontier of humanity in the present day. "
     },
     "benefits": {
-        "base": "Lastly, the perks offered for workers caught my eye. ",
+        "base": "Finally, the perks offered section of the advertisement caught my eye. ",
         "days holiday": "I am very happy with $days holiday as I think it's important to have a good work/life balance. ",
         "insurance": "It's always nice to be insured by your company as it demonstrates real compassion for workers. ",
         "flexible working": "Hybrid working is my first choice, so I appreciate that opportunity and will make use of it. ",
         "mindfulness": "Mental health is very important to everyone. It's great to see more companies being aware of that fact and nurturing a positive environment. ",
         "gym": "The gym membership is great and will complement my plans. ",
         "cycle": "I would love to cycle as it's a great form of exercise, so it was good to see that included in the benefits. ",
-        "personal development": "The focus on personal development is something that is important to me as someone that always wants to evolve with the industry. "
+        "personal development": "The focus on personal development is something that is important to me as someone that always wants to evolve with the industry. ",
+        "learning": "@benefits/personal development#"
     },
     "work style": {
-        "remote": "Remote working is amazing and the future, so that is a definite plus for me. ",
+        "remote": "On top of everything else, remote working is a definite plus for me. ",
         "hybrid": "@benefits//flexible working#",
-        "office": "I don't mind coming into the office and enjoy the personal connection it enables between colleagues. "
+        "office": "I'd also like to mention that I enjoy coming into the office. It can be useful to speak face-to-face and interact with people that you wouldn't usually in a fully remote position. "
     },
     "conclusion": "I hope I have sufficiently made the case for why I should be considered. Thanks for your time and I hope to hear from you soon."
 }

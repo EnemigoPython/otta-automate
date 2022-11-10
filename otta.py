@@ -61,6 +61,28 @@ class Sentiment(Enum):
     PRONOUNS = auto()
     UNKNOWN = auto()
 
+class DatabaseLog:
+    """
+    An object to store the data row we send to our sqlite database after applying
+    """
+    def __init__(self, job_title: str, company_title: str, salary: str | None, weblink: str):
+        self.job_title = job_title
+        self.company_title = company_title
+        self.salary = None if salary is None else f"{salary}K"
+        self.date = str(datetime.now())
+        self.weblink = weblink
+        self.method = "otta-auto" if AUTO else "otta-manual"
+
+    def __iter__(self):
+        return (i for i in (
+            self.job_title, 
+            self.company_title, 
+            self.salary, 
+            self.date, 
+            self.weblink, 
+            self.method
+        ))
+       
 class Question:
     """
     A Question object represents what needs to be entered (Sentiment) and how to enter it (InputType)
@@ -234,16 +256,17 @@ class DriverManager(webdriver.Firefox):
     def submit_application(self):
         self.find_element_by_data_id("send-application").click()
         time.sleep(2) # we aren't in a rush, just give the POST request a chance to send off
+        assert "apply" not in self.current_url
 
-    def insert_db_row(self, data):
+    def insert_db_row(self, data: DatabaseLog):
         """
         We log the application into the database in the `job_application` table with these columns:
         title, company, salary, date_applied, link, method=auto
         """
         cur = self.con.cursor()
-        cur.execute("INSERT INTO job_application VALUES (?, ?, ?, ?, ?, ?)", data)
+        cur.execute("INSERT INTO job_application VALUES (?, ?, ?, ?, ?, ?)", tuple(data))
         self.con.commit()
-        self.logger.info(f"Applied for role as '{data[0]}' at '{data[1]}'")
+        self.logger.info(f"Applied for role as '{data.job_title}' at '{data.company_title}'")
 
 class JobApplication:
     """
@@ -360,14 +383,11 @@ class JobApplication:
         """
         Defining data to send to the DriverManager
         """
-        salary = None if self.salary is None else f"{self.salary}K"
-        return (
+        return DatabaseLog(
             self.job_title, 
             self.company_title, 
-            salary, 
-            str(datetime.now()), 
-            self.web_link, 
-            "otta-auto" if AUTO else "otta-manual"
+            self.salary, 
+            self.web_link 
         )
 
 
@@ -403,7 +423,7 @@ def main():
                     raise e
                 else:
                     failed_company = application.company_title
-                    logger.warning(f"Failed to apply to job {application.company_title} due to '{e.__class__.__name__}' encountered")
+                    logger.warning(f"Failed to apply to job {failed_company} due to '{e.__class__.__name__}' encountered")
                     logger.warning("Not in debug mode - continuing")
             driver.get(OTTA_URL)
         if applications_in_session > 0:

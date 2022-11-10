@@ -11,7 +11,7 @@
         "python": "I have spent more days in the past two years writing Python than anything else. While programming is always a learning experience, I am very confident with the level I have reached so far and my ability to write high quality Python code. What's more, I enjoy the process thoroughly. ",
         "pytest": "@skills//testing#",
         "javascript": "Javascript is an essential tool to have in your arsenal as a web developer as it is the pillar of modern websites. I have used it extensively in personal and professional projects on both the front and back end. ",
-        "typescript": "Typescript is an amazing solution to write safer Javascript code and I made extensive use of it while writing an important data API at work. ",
+        "typescript": "Typescript is an amazing solution to write safer Javascript code and it is my preference to make use of types in large and complicated codebases. ",
         "node.js": "I am very comfortable working with node and have made use of it in combination with core libraries such as express and socketio, along with others in the NPM ecosystem. ",
         "deno": "Deno is a fascinating new development in the Javascript ecosystem. As a developer primarily in node.js, I have had my eye on it as a solution for many of the latter's shortcomings. ",
         "c#": "C# was my introduction to statically typed languages and I have used it both at work and in personal projects since, including with the Blazor and Swagger UI libraries. ",

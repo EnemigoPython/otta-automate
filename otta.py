@@ -328,7 +328,7 @@ class JobApplication:
             try:
                 days = days_holiday[0].split("days holiday")[0].split()[-1]
                 cover_letter = cover_letter.replace("$days", int(days))
-            except (TypeError, IndexError):
+            except (TypeError, IndexError, ValueError):
                 cover_letter = cover_letter.replace("$days", "the offered amount of")
         return cover_letter
 

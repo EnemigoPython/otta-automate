@@ -1,7 +1,9 @@
 # selenium
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.firefox.service import Service as FirefoxService
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium import webdriver
 
@@ -59,6 +61,7 @@ class Sentiment(Enum):
     NEED_SPONSORSHIP = auto()
     HOW_DID_YOU_HEAR = auto()
     PRONOUNS = auto()
+    SALARY_EXPECTATIONS = auto()
     UNKNOWN = auto()
 
 class DatabaseLog:
@@ -214,11 +217,12 @@ class DriverManager(webdriver.Firefox):
     def extract_sentiment(self, text: str):
         sentiment = Sentiment.UNKNOWN
         semantic_clues = {
-            Sentiment.COVER_LETTER: ["why do you want to work"],
-            Sentiment.AFFIRM_RIGHT_TO_WORK: ["right to work in UK", "do have", "do you have", "citizenship", "confirm the right", "confirm you are"],
-            Sentiment.NEED_SPONSORSHIP: ["will you need", "sponsor", "sponsorship", "immigration"],
-            Sentiment.PRONOUNS: ["preferred name", "pronouns"],
-            Sentiment.HOW_DID_YOU_HEAR: ["how did you hear"]
+            Sentiment.COVER_LETTER: ("why do you want to work"),
+            Sentiment.AFFIRM_RIGHT_TO_WORK: ("right to work in UK", "do have", "do you have", "citizenship", "confirm the right", "confirm you are", "legally authorised"),
+            Sentiment.NEED_SPONSORSHIP: ("will you need", "sponsor", "sponsorship", "immigration"),
+            Sentiment.PRONOUNS: ("preferred name", "pronouns"),
+            Sentiment.HOW_DID_YOU_HEAR: ("how did you hear"),
+            Sentiment.SALARY_EXPECTATIONS: ("salary", "expectations", "expectation")
         }
         threshold = 0
         for key, value in semantic_clues.items():
@@ -255,7 +259,7 @@ class DriverManager(webdriver.Firefox):
 
     def submit_application(self):
         self.find_element_by_data_id("send-application").click()
-        time.sleep(2) # we aren't in a rush, just give the POST request a chance to send off
+        time.sleep(CONFIG.get("wait") or 30)
         assert "apply" not in self.current_url
 
     def insert_db_row(self, data: DatabaseLog):
@@ -264,7 +268,7 @@ class DriverManager(webdriver.Firefox):
         title, company, salary, date_applied, link, method=auto
         """
         cur = self.con.cursor()
-        cur.execute("INSERT INTO job_application VALUES (?, ?, ?, ?, ?, ?)", tuple(data))
+        cur.execute("INSERT INTO job_application (title, company, salary, date_applied, link, method) VALUES (?, ?, ?, ?, ?, ?)", tuple(data))
         self.con.commit()
         self.logger.info(f"Applied for role as '{data.job_title}' at '{data.company_title}'")
 
@@ -273,6 +277,8 @@ class JobApplication:
     Used to gather the data and formulate our job application
     """
     def __init__(self, driver: DriverManager):
+        # WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.XPATH, "//*[@data-testid='ottas-take']")))
+        # WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.XPATH, "//*[@data-testid='job-title']")))
         try:
             self.company_title = driver.page_data_text("ottas-take").split("Otta's take on ")[-1]
         except IndexError:
@@ -289,7 +295,10 @@ class JobApplication:
         self.job_requirements = driver.page_data_text_list("job-requirements-bullet")
         self.web_link = driver.get_web_link()
         if self.minimum_application_requirement():
-            driver.logger.info(f"Data gathered for {self.company_title}")
+            driver.logger.info(f"Data gathered for '{self}'")
+
+    def __repr__(self):
+        return f"{self.job_title} at {self.company_title}"
 
     def minimum_application_requirement(self):
         """
@@ -328,7 +337,7 @@ class JobApplication:
         add_base = True
         if section_list is not None:
             if includes:
-                included_keys = [k for s in section_list for k in COVER_LETTER_DATA[name].keys() if k in s.lower()]
+                included_keys = set(k for s in section_list for k in COVER_LETTER_DATA[name].keys() if k in s.lower())
                 for key in included_keys:
                     if add_base:
                         section += "\n" + COVER_LETTER_DATA[name]["base"]
@@ -401,17 +410,19 @@ def main():
     with DriverManager(logger, con) as driver:
         driver.get(OTTA_URL)
         applications_in_session = 0
-        failed_company = None
+        failed_companies = set()
         while (application := JobApplication(driver)).minimum_application_requirement():
-            if application.company_title == failed_company:
-                logger.warning(f"Encountered {failed_company}: skipping to next company")
+            if application.company_title in failed_companies:
+                logger.warning(f"Company failed in this session: skipping to next company")
                 driver.find_element_by_data_id("next-button").click()
-            driver.debug(f"Entering debugger at '{application.company_title}' listing page")
+                time.sleep(CONFIG.get("wait") or 30)
+                continue
+            driver.debug(f"Entering debugger at '{application}' listing page")
             driver.browse_to_application_page()
             question_elements = driver.find_elements_by_data_id("application-questions-card")
             questions = [question for question in driver.extract_question_info(question_elements)]
             answers = [answer for answer in application.answers(questions)]
-            driver.debug(f"Entering debugger at '{application.company_title}' application page")
+            driver.debug(f"Entering debugger at '{application}' application page")
             try:
                 for element, question, answer in zip(question_elements, questions, answers):
                     driver.enter_answer(element, question.input_type, answer)
@@ -422,8 +433,8 @@ def main():
                 if DEBUG:
                     raise e
                 else:
-                    failed_company = application.company_title
-                    logger.warning(f"Failed to apply to job {failed_company} due to '{e.__class__.__name__}' encountered")
+                    failed_companies.add(application.company_title)
+                    logger.warning(f"Failed to apply to job '{application}' due to '{e.__class__.__name__}' encountered")
                     logger.warning("Not in debug mode - continuing")
             driver.get(OTTA_URL)
         if applications_in_session > 0:

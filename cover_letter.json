@@ -67,7 +67,7 @@
         "gym": "The gym membership is great and will complement my plans. ",
         "cycle": "I would love to cycle as it's a great form of exercise, so it was good to see that included in the benefits. ",
         "personal development": "The focus on personal development is something that is important to me as someone that always wants to evolve with the industry. ",
-        "learning": "@benefits/personal development#"
+        "learning": "@benefits//personal development#"
     },
     "work style": {
         "remote": "On top of everything else, remote working is a definite plus for me. ",

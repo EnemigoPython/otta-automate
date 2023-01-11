@@ -193,6 +193,20 @@ class DriverManager(webdriver.Firefox):
         except:
             return None
 
+    def update_otta_notification_count(self):
+        """
+        Useful to get a count of my inbox so I can know if anyone is talking to me on the app
+        """
+        cur = self.con.cursor()
+        try:
+            notification_number = self.find_element_by_data_id("unread-message-dot").text
+            cur.execute("UPDATE otta_notifications SET notifications=(?)", (notification_number,))
+            self.logger.info(f"New notifications value logged: {notification_number}")
+        except:
+            cur.execute("UPDATE otta_notifications SET notifications=(0)")
+            self.logger.info("No new notifications detected, resetting it to 0")
+        self.con.commit()
+
     def browse_to_application_page(self):
         buttons_panel = self.find_element_by_data_id("desktop-action-panel")
         buttons_panel.find_elements(By.TAG_NAME, "button")[1].click()
@@ -409,6 +423,7 @@ def main():
 
     with DriverManager(logger, con) as driver:
         driver.get(OTTA_URL)
+        driver.update_otta_notification_count()
         applications_in_session = 0
         failed_companies = set()
         while (application := JobApplication(driver)).minimum_application_requirement():

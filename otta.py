@@ -208,9 +208,8 @@ class DriverManager(webdriver.Firefox):
         self.con.commit()
 
     def browse_to_application_page(self):
-        buttons_panel = self.find_element_by_data_id("desktop-action-panel")
-        buttons_panel.find_elements(By.TAG_NAME, "button")[1].click()
-        apply_modal = self.find_element_by_data_id("apply-content")
+        self.find_element_by_data_id("apply-button").click()
+        apply_modal = self.find_element(By.ID, ":rp:")
         apply_modal.find_element(By.TAG_NAME, "button").click()
 
     def extract_input_type(self, text: str):
